@@ -1,0 +1,22 @@
+======================================================================
+TRUCKLINK: EXPLORATORY DATA ANALYSIS & VISUALIZATION (EDADV) REPORT
+======================================================================
+
+Total Freight Records Analyzed: 350
+Total Gross Revenue Generated: INR 14,806,665.00
+Average Trip Distance: 752.87 KM (Std: 323.13)
+Average Cargo Weight: 8.63 Tons (Max: 27.00)
+Average Trip Delay: 1.22 Hours
+
+Top 5 Revenue Corridors:
+  - Kolkata -> Delhi: INR 417,936.00
+  - Chennai -> Kolkata: INR 402,236.00
+  - Delhi -> Kolkata: INR 401,538.00
+  - Jaipur -> Ahmedabad: INR 357,381.00
+  - Kolkata -> Hyderabad: INR 356,219.00
+
+Key Observations:
+1. High linear correlation (r > 0.85) between trip distance and fare pricing.
+2. Container carriers show greatest variance in fare due to variable multi-state tolls.
+3. 72% of trips were completed with zero delays, while 28% experienced minor transit delays.
+======================================================================

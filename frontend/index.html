@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TruckLink - Integrated Logistics Platform (FSD • DBMS • EDADV)</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="navbar">
+    <div class="brand">
+      <div class="brand-icon">TL</div>
+      <div>
+        <div class="brand-title">TruckLink</div>
+        <div class="brand-sub">FSD • DBMS • EDADV Integrated Project</div>
+      </div>
+    </div>
+
+    <div class="nav-controls">
+      <!-- Role Switcher -->
+      <div class="role-switcher">
+        <button class="role-btn active" id="btn-role-customer" onclick="setRole('customer')">Customer</button>
+        <button class="role-btn" id="btn-role-driver" onclick="setRole('driver')">Driver</button>
+        <button class="role-btn" id="btn-role-admin" onclick="setRole('admin')">Admin & Analytics</button>
+      </div>
+
+      <!-- Quick User Selector for testing -->
+      <select id="user-select" class="form-control" style="width: auto; padding: 4px 8px;" onchange="changeUser()">
+        <option value="">Loading users...</option>
+      </select>
+
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        <span>100% Local (Offline)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="container">
+
+    <!-- ============================================================== -->
+    <!-- VIEW 1: CUSTOMER BOOKING PORTAL                                -->
+    <!-- ============================================================== -->
+    <div id="view-customer">
+      <div class="grid-2">
+        <!-- New Booking Form -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Book Freight Transit</h2>
+            <span class="badge badge-confirmed">New Booking</span>
+          </div>
+
+          <form id="booking-form" onsubmit="submitBooking(event)">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Pickup City</label>
+                <select id="pickup-city" class="form-control" onchange="calculateFarePreview()" required>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Pune">Pune</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Bengaluru">Bengaluru</option>
+                  <option value="Chennai">Chennai</option>
+                  <option value="Hyderabad">Hyderabad</option>
+                  <option value="Ahmedabad">Ahmedabad</option>
+                  <option value="Kolkata">Kolkata</option>
+                  <option value="Jaipur">Jaipur</option>
+                  <option value="Surat">Surat</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Destination City</label>
+                <select id="drop-city" class="form-control" onchange="calculateFarePreview()" required>
+                  <option value="Pune">Pune</option>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Bengaluru">Bengaluru</option>
+                  <option value="Chennai">Chennai</option>
+                  <option value="Hyderabad">Hyderabad</option>
+                  <option value="Ahmedabad">Ahmedabad</option>
+                  <option value="Kolkata">Kolkata</option>
+                  <option value="Jaipur">Jaipur</option>
+                  <option value="Surat">Surat</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Cargo Type</label>
+                <select id="cargo-type" class="form-control" required>
+                  <option value="FMCG & Packaged Foods">FMCG & Packaged Foods</option>
+                  <option value="Industrial Machinery">Industrial Machinery</option>
+                  <option value="Automobile Parts">Automobile Parts</option>
+                  <option value="Textiles & Garments">Textiles & Garments</option>
+                  <option value="Electronics">Electronics</option>
+                  <option value="Agricultural Produce">Agricultural Produce</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Cargo Weight (Tons)</label>
+                <input type="number" id="cargo-weight" class="form-control" min="0.5" max="30" step="0.5" value="3.5" oninput="calculateFarePreview(); loadAvailableTrucks();" required>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Dispatch Date</label>
+                <input type="date" id="scheduled-date" class="form-control" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Payment Mode</label>
+                <select id="payment-method" class="form-control">
+                  <option value="UPI">UPI (Instant Simulation)</option>
+                  <option value="Net Banking">Net Banking</option>
+                  <option value="Cash on Delivery">Cash on Delivery</option>
+                  <option value="Credit Card">Corporate Card</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Select Available Truck</label>
+              <select id="truck-select" class="form-control" required>
+                <option value="">Searching available fleet...</option>
+              </select>
+            </div>
+
+            <!-- Dynamic Local Fare Estimation -->
+            <div class="estimate-box">
+              <div class="estimate-row">
+                <span>Estimated Distance:</span>
+                <strong id="preview-distance">150 KM</strong>
+              </div>
+              <div class="estimate-row">
+                <span>Base Transit Fee:</span>
+                <span>₹1,200.00</span>
+              </div>
+              <div class="estimate-row">
+                <span>Mileage & Tonnage Surcharge:</span>
+                <span id="preview-surcharge">₹5,670.00</span>
+              </div>
+              <div class="estimate-row estimate-total">
+                <span>Total Estimated Fare:</span>
+                <span id="preview-fare">₹6,870.00</span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+              Confirm & Book Truck
+            </button>
+          </form>
+        </div>
+
+        <!-- Customer Bookings List -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">My Recent Bookings</h2>
+            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" onclick="loadBookings()">Refresh</button>
+          </div>
+          <div class="table-wrapper" style="max-height: 540px; overflow-y: auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Route</th>
+                  <th>Cargo</th>
+                  <th>Fare</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="customer-bookings-table">
+                <tr><td colspan="5" style="text-align:center;">Loading bookings...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 2: DRIVER ASSIGNMENT & STATUS PORTAL                      -->
+    <!-- ============================================================== -->
+    <div id="view-driver" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title" id="driver-portal-title">Driver Trip Console</h2>
+            <div class="brand-sub" id="driver-assigned-truck">Assigned Vehicle: Loading...</div>
+          </div>
+          <span class="badge badge-in_transit">Trip Management</span>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Booking #</th>
+                <th>Client Name</th>
+                <th>Route Corridor</th>
+                <th>Cargo / Weight</th>
+                <th>Fare</th>
+                <th>Trip Status</th>
+                <th>Action (DBMS Triggers)</th>
+              </tr>
+            </thead>
+            <tbody id="driver-trips-table">
+              <tr><td colspan="7" style="text-align:center;">Loading assigned trips...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 3: ADMIN & EDADV ANALYTICS DASHBOARD                     -->
+    <!-- ============================================================== -->
+    <div id="view-admin" style="display: none;">
+      
+      <!-- High-Level DBMS KPIs -->
+      <div class="grid-4" style="margin-bottom: 1.5rem;">
+        <div class="kpi-card">
+          <span class="kpi-label">Total Freight Bookings</span>
+          <span class="kpi-value" id="kpi-total-bookings">350</span>
+          <span class="kpi-sub">Database Record Count</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Gross Revenue</span>
+          <span class="kpi-value" id="kpi-total-revenue">₹1.48 Cr</span>
+          <span class="kpi-sub">Completed & Confirmed Orders</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Delivered Trips</span>
+          <span class="kpi-value" id="kpi-delivered">280</span>
+          <span class="kpi-sub">Completed Deliveries</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">In-Transit Freight</span>
+          <span class="kpi-value" id="kpi-in-transit">30</span>
+          <span class="kpi-sub">Active On-Road Fleet</span>
+        </div>
+      </div>
+
+      <!-- Live Interactive Canvas Charts (Pure local JS & Canvas) -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Fleet Allocation by Truck Category</h3>
+            <span class="badge badge-available">DBMS View: vw_fleet_status</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="canvas-fleet-chart" width="550" height="250"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Top 5 Freight Corridors (Gross Volume)</h3>
+            <span class="badge badge-confirmed">DBMS View: vw_route_analytics</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="canvas-routes-chart" width="550" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDADV Statistical Showcase (High-Res Matplotlib & Seaborn Visualizations) -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Exploratory Data Analysis & Visualization (EDADV) Suite</h2>
+            <div class="brand-sub">Generated offline from <code>trucklink.db</code> using Pandas, Matplotlib & Seaborn</div>
+          </div>
+          <button class="btn btn-outline" onclick="triggerPythonEDA()">Re-run Python EDA Script</button>
+        </div>
+
+        <div class="chart-gallery">
+          <div class="chart-thumbnail-card">
+            <img src="/charts/01_univariate_weight_distance.png" alt="Univariate Analysis">
+            <div class="chart-caption">
+              <strong>Figure 1: Univariate Distributions</strong>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">Histograms with KDE for Cargo Weight and Trip Mileage.</div>
+            </div>
+          </div>
+
+          <div class="chart-thumbnail-card">
+            <img src="/charts/02_outlier_boxplots_fare.png" alt="Outlier Detection">
+            <div class="chart-caption">
+              <strong>Figure 2: Outlier Detection Boxplots</strong>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">Fare dispersion and variance across 4 truck vehicle tiers.</div>
+            </div>
+          </div>
+
+          <div class="chart-thumbnail-card">
+            <img src="/charts/03_correlation_heatmap.png" alt="Correlation Matrix">
+            <div class="chart-caption">
+              <strong>Figure 3: Correlation Matrix Heatmap</strong>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">Bivariate correlation between Weight, Distance, Delay, and Fare.</div>
+            </div>
+          </div>
+
+          <div class="chart-thumbnail-card">
+            <img src="/charts/04_distance_vs_fare_scatter.png" alt="Scatter Regression">
+            <div class="chart-caption">
+              <strong>Figure 4: Distance vs Fare Linear Regression</strong>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">Multi-tier pricing slope with regression line (r > 0.85).</div>
+            </div>
+          </div>
+
+          <div class="chart-thumbnail-card">
+            <img src="/charts/05_top_revenue_routes.png" alt="Top Freight Routes">
+            <div class="chart-caption">
+              <strong>Figure 5: Top 10 Revenue Corridors</strong>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">Aggregated route earnings across national transit pairs.</div>
+            </div>
+          </div>
+
+          <div class="chart-thumbnail-card">
+            <img src="/charts/06_monthly_booking_trends.png" alt="Temporal Trends">
+            <div class="chart-caption">
+              <strong>Figure 6: Temporal Booking & Delivery Trends</strong>
+              <div style="color: var(--text-muted); font-size: 0.75rem;">Stacked monthly distribution of fulfilled vs ongoing trips.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Driver Performance & DBMS Views Table -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Driver Performance & Rating Ledger</h2>
+          <span class="badge badge-delivered">DBMS View: vw_driver_performance</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Driver Name</th>
+                <th>Phone</th>
+                <th>Assigned Truck</th>
+                <th>Total Trips</th>
+                <th>Completed Trips</th>
+                <th>Gross Earnings</th>
+                <th>Average Rating</th>
+              </tr>
+            </thead>
+            <tbody id="driver-performance-table">
+              <tr><td colspan="7" style="text-align:center;">Loading driver performance...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Local Footer -->
+  <footer class="footer">
+    TruckLink System • 100% Localhost Execution • FSD (Full Stack) + DBMS (SQLite/MySQL 3NF) + EDADV (Pandas/Seaborn)
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
